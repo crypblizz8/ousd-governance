@@ -12,6 +12,8 @@ import Icon from "@mdi/react";
 import { mdiWallet, mdiLaunch, mdiArrowDown } from "@mdi/js";
 import Image from "next/image";
 
+const storyStakingURL = "https://story.xyz/#/stake";
+
 interface PostClaimModalProps {
   show: Boolean;
   claim: Object;
@@ -136,7 +138,7 @@ const PostClaimModalProps: FunctionComponent<PostClaimModalProps> = ({
                 </p>
                 <Link
                   className="flex justify-center"
-                  href="https://www.story.xyz"
+                  href={{ storyStakingURL }}
                 >
                   <Image
                     width="229"
@@ -146,7 +148,7 @@ const PostClaimModalProps: FunctionComponent<PostClaimModalProps> = ({
                   />
                 </Link>
                 <Link
-                  href="https://www.story.xyz"
+                  href={{ storyStakingURL }}
                   className="btn rounded-full normal-case space-x-2 btn-lg h-[3.25rem] min-h-[3.25rem] w-full btn-primary bg-black text-white border-black hover:bg-gray-900 hover:border-gray-900"
                 >
                   <span>Earn ETH rewards</span>
