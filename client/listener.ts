@@ -36,7 +36,7 @@ const contracts = [
     name: "Governance",
     address: GovernanceContracts.Governance.address,
     abi: GovernanceContracts.Governance.abi,
-    events: ["ProposalCreated"],
+    events: ["ProposalCreated", "VoteCast"],
   },
   {
     name: "OgvStaking",
@@ -186,20 +186,63 @@ const handleUnstake = async (event) => {
   }
 }
 
-const handleNewVoter = async (event) => {
+const handleVoteCast = async (event) => {
+  // Check if voter exists
+  let existingVoter;
+
   try {
-    await prisma.voter.create({
-      data: {
-        address: event.values.provider,
-        votes: (
-          await governanceTokenContract.balanceOf(event.values.provider)
-        ).toString(),
-        firstSeenBlock: event.blockNumber,
+    existingVoter = await prisma.voter.findUnique({
+      where: {
+        address: event.values.voter,
       },
     });
-    logger.info("Inserted new voter");
-  } catch (e) {
+  } catch(e) {
     logger.info(e);
+  }
+
+  if(existingVoter) {
+    // Update record
+    try {
+      await prisma.voter.update({
+        where: {
+          address: event.values.voter,
+        },
+        data: {
+          votes: (
+            await governanceTokenContract.balanceOf(event.values.voter)
+          ).toString(),
+          proposalsVoted: {
+            connect: {
+              proposalId: event.values.proposalId,
+            },
+          },
+        }
+      });
+      logger.info(`Voter ${event.values.voter} updated`);
+    } catch (e) {
+      logger.info(e);
+    }
+  } else {
+    // Add new voter
+    try {
+      await prisma.voter.create({
+        data: {
+          address: event.values.voter,
+          votes: (
+            await governanceTokenContract.balanceOf(event.values.voter)
+          ).toString(),
+          firstSeenBlock: event.blockNumber,
+          proposalsVoted: {
+            connect: {
+              proposalId: event.values.proposalId,
+            },
+          },
+        },
+      });
+      logger.info(`Inserted new voter: ${event.values.voter}`);
+    } catch (e) {
+      logger.info(e);
+    }
   }
 }
 
@@ -215,8 +258,11 @@ const handleEvents = async (blockNumber, events, done) => {
       case 'Unstake':
         await handleUnstake(event);
         break;
+      case 'VoteCast':
+        await handleVoteCast(event);
+        break;
       default:
-        await handleNewVoter(event);
+        break;
     }
   }
 };
